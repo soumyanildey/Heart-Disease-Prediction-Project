@@ -1,114 +1,153 @@
-# Heart Disease Prediction Project
+# Heart Disease Prediction using Ensemble Learning
 
-## Project Overview
-This project focuses on predicting heart disease using machine learning techniques. It uses a dataset containing various medical attributes to build a classification model that can predict whether a patient has heart disease.
+This project implements an end-to-end machine learning pipeline to predict heart disease risk using clinical data. It includes data preprocessing, ensemble model training, an inference API built with FastAPI, and a minimal web interface for user interaction.
 
-## Dataset Description
-The dataset (`heart.csv`) contains medical and demographic information about patients along with a binary target variable indicating the presence of heart disease. The dataset includes the following features:
+---
 
-- **Age**: Age of the patient in years
-- **Sex**: Gender of the patient (M: Male, F: Female)
-- **ChestPainType**: Type of chest pain experienced
-  - TA: Typical Angina
-  - ATA: Atypical Angina
-  - NAP: Non-Anginal Pain
-  - ASY: Asymptomatic
-- **RestingBP**: Resting blood pressure in mm Hg
-- **Cholesterol**: Serum cholesterol in mg/dl
-- **FastingBS**: Fasting blood sugar > 120 mg/dl (1: true, 0: false)
-- **RestingECG**: Resting electrocardiogram results
-  - Normal: Normal
-  - ST: Having ST-T wave abnormality
-  - LVH: Showing probable or definite left ventricular hypertrophy
-- **MaxHR**: Maximum heart rate achieved
-- **ExerciseAngina**: Exercise-induced angina (Y: Yes, N: No)
-- **Oldpeak**: ST depression induced by exercise relative to rest
-- **ST_Slope**: Slope of the peak exercise ST segment
-  - Up: Upsloping
-  - Flat: Flat
-  - Down: Downsloping
-- **HeartDisease**: Target variable (1: heart disease, 0: no heart disease)
+## 🔹 Objective
 
-## Project Structure
-The project follows these main steps:
+Develop a robust and interpretable heart disease prediction system using machine learning. The system should support real-time predictions via a REST API and be accessible through a simple frontend UI.
 
-1. **Data Loading and Exploration**
-   - Loading the dataset
-   - Checking for missing values
-   - Exploring data types and unique values
-   - Statistical summary of the data
+---
 
-2. **Data Visualization**
-   - Distribution of features
-   - Relationship between features and heart disease
+## 📊 Machine Learning Pipeline
 
-3. **Data Preprocessing**
-   - Encoding categorical variables
-     - Binary encoding for 'Sex' and 'ExerciseAngina'
-     - One-hot encoding for 'ChestPainType', 'RestingECG', and 'ST_Slope'
-   - Feature scaling
-     - Standard scaling for 'Age', 'RestingBP', and 'MaxHR'
-     - Robust scaling for 'Cholesterol' and 'Oldpeak'
+### ➤ Dataset
 
-4. **Model Building**
-   - Train-test split (85% training, 15% testing)
-   - Random Forest Classifier implementation
-   - Feature importance analysis
-   - Feature selection (top 10 features)
+A structured dataset containing clinical and demographic features:
 
-5. **Model Evaluation**
-   - Confusion matrix
-   - Classification report (precision, recall, F1-score)
-   - Balanced accuracy score
+* **Target**: Presence of heart disease (0: No, 1: Yes)
 
-6. **Model Optimization**
-   - Hyperparameter tuning for Random Forest
-   - K-Nearest Neighbors implementation with GridSearchCV
+### ➤ Features Used
 
-## Key Files
-- `heart.py`: Main Python script containing the entire analysis and modeling process
-- `heart.csv`: Dataset file containing patient records
-- `label_encodings.json`: JSON file storing the label encoding mappings
-- `onehot_feature_names.json`: JSON file storing one-hot encoded feature names
-- `standard_scaler.pkl`: Saved StandardScaler model for numerical features
-- `robust_scaler.pkl`: Saved RobustScaler model for numerical features with outliers
+* `Age`
+* `Sex` (1: Male, 0: Female)
+* `ChestPainType_ASY`
+* `RestingBP`
+* `Cholesterol`
+* `FastingBS`
+* `MaxHR`
+* `ExerciseAngina`
+* `Oldpeak`
+* `ST_Slope_Up`
 
-## Dependencies
-- numpy
-- pandas
-- matplotlib
-- seaborn
-- scikit-learn
-- joblib
+### ➤ Preprocessing
 
-## Model Performance
-The Random Forest Classifier achieved strong performance after feature selection and hyperparameter tuning:
-- Balanced accuracy: ~0.9
-- High precision and recall for both classes
-- Effective identification of key predictive features
+* Categorical encoding (LabelEncoding and One-Hot for dummy variables)
+* Scaling with `StandardScaler` (for: `RestingBP`, `Cholesterol`, `MaxHR`, `Oldpeak`)
+* Train/test split (80/20), 5-fold cross-validation
 
-## Feature Importance
-The analysis identified the most important features for predicting heart disease, which include:
-- ST_Slope (encoded features)
-- Oldpeak
-- ChestPainType (encoded features)
-- ExerciseAngina
-- Age
-- MaxHR
+### ➤ Model
 
-## Future Improvements
-- Implement additional models (SVM, Neural Networks, etc.)
-- Perform more extensive hyperparameter tuning
-- Explore feature engineering opportunities
-- Implement cross-validation for more robust evaluation
-- Deploy the model as a web application for practical use
+* **Model Type**: `VotingClassifier`
+* **Base Learners**:
 
-## Usage
-To run this project:
-1. Ensure all dependencies are installed
-2. Place the dataset in the appropriate directory
-3. Run the `heart.py` script
-4. Examine the output visualizations and model performance metrics
+  * `RandomForestClassifier`
+  * `KNeighborsClassifier`
+* **Voting Strategy**: Hard voting (majority class)
 
-## Conclusion
-This project demonstrates the effective use of machine learning techniques to predict heart disease based on medical attributes. The Random Forest model shows promising results, and the feature importance analysis provides valuable insights into the key factors associated with heart disease.
+### ➤ Exported Artifacts
+
+* `hard_vote_model.pkl` – Trained ensemble model
+* `scaler.pkl` – Fitted StandardScaler instance
+
+---
+
+## 🧪 Evaluation
+
+* Accuracy: \~90%
+* F1-Score, Precision, Recall computed
+* 5-fold Cross-Validation
+* Confusion matrix and ROC AUC used for performance validation
+
+---
+
+## 🧩 Backend: FastAPI
+
+The model is served using a FastAPI application with the following endpoint:
+
+### ➤ `/predict` (POST)
+
+**Request Body:**
+
+```json
+{
+  "Age": 52,
+  "Sex": 1,
+  "ChestPainType_ASY": 1,
+  "RestingBP": 140,
+  "Cholesterol": 260,
+  "FastingBS": 1,
+  "MaxHR": 160,
+  "ExerciseAngina": 1,
+  "Oldpeak": 2.3,
+  "ST_Slope_Up": 1
+}
+```
+
+**Response:**
+
+```json
+{
+  "prediction": "High Risk"  // or "Low Risk"
+}
+```
+
+**CORS** is enabled for frontend interaction.
+
+---
+
+## 🌐 Frontend: Minimal UI (HTML + JS)
+
+A single-page UI is built to collect user inputs and fetch predictions via the FastAPI backend.
+
+### ➤ Features
+
+* Input form for all model-required features
+* `Fetch API` for POST request to `http://127.0.0.1:8000/predict`
+* Displays prediction result on-screen
+
+**Note**: Must be served on a CORS-allowed domain (e.g., `localhost`, `127.0.0.1`).
+
+---
+
+## 🗂 Project Structure
+
+```
+📦 heart-disease-prediction/
+ ┣ 📁 backend/
+ ┃ ┣ 📜 main.py                 # FastAPI app with /predict route
+ ┃ ┣ 📜 hard_vote_model.pkl     # Trained ensemble model
+ ┃ ┗ 📜 scaler.pkl              # Trained StandardScaler
+ ┣ 📁 frontend/
+ ┃ ┗ 📜 index.html              # Simple HTML UI for input and prediction
+ ┣ 📁 training/
+ ┃ ┣ 📜 train_model.py          # Data processing and model training
+ ┃ ┗ 📜 utils.py                # Helper functions for encoding/scaling
+ ┗ 📜 README.md
+```
+
+---
+
+## 🔧 Installation & Run Instructions
+
+### ➤ Install dependencies
+
+```bash
+poetry install
+# or
+pip install -r requirements.txt
+```
+
+### ➤ Run API Server
+
+```bash
+uvicorn main:app --reload
+```
+
+### ➤ Open Frontend
+
+Open `frontend/index.html` in a browser (ensure FastAPI server is running).
+
+---
+
