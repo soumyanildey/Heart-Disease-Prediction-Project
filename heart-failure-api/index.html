@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heart Health Predictor</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fff3e0);
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00796b;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin: 15px 0 5px;
+      font-weight: 600;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+
+    button {
+      flex: 1;
+      margin: 0 10px;
+      padding: 12px;
+      background-color: #00796b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .risk {
+      color: #d32f2f;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .no-risk {
+      color: #388e3c;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Modal for showing prediction results -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <div id="resultText"></div>
+      <p id="resultDescription"></p>
+      <button onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>Heart Health Predictor</h1>
+    <form id="heartForm" method="post">
+
+      <label for="age">How old are you?</label>
+      <input type="number" id="age" name="Age" required />
+
+      <label for="sex">What is your sex assigned at birth?</label>
+      <select id="sex" name="Sex">
+        <option value="1">Male</option>
+        <option value="0">Female</option>
+      </select>
+
+      <label for="restingBP">What is your usual blood pressure?</label>
+      <input type="number" id="restingBP" name="RestingBP" required />
+
+      <label for="cholesterol">What is your cholesterol level?</label>
+      <input type="number" id="cholesterol" name="Cholesterol" required />
+
+      <label for="fastingBS">Have you ever been told your blood sugar is high (above 120) before eating?</label>
+      <select id="fastingBS" name="FastingBS">
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+
+      <label for="maxHR">What is the highest heart rate you reached while exercising?</label>
+      <input type="number" id="maxHR" name="MaxHR" required />
+
+      <label for="oldpeak">Did your doctor mention any heart reading changes after exercise? (You can leave as 0 if
+        unsure)</label>
+      <input type="number" id="oldpeak" name="Oldpeak" step="0.1" required />
+
+      <label for="chestPain">Do you feel chest discomfort even when not active?</label>
+      <select id="chestPain" name="ChestPainType_ASY">
+        <option value="1">Yes, without doing anything</option>
+        <option value="0">No, only during effort or other types</option>
+      </select>
+
+      <label for="exerciseAngina">Do you feel chest pain or discomfort when you exercise?</label>
+      <select id="exerciseAngina" name="ExerciseAngina">
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+
+      <label for="stSlope">Did your heart rate improve after exercise?</label>
+      <select id="stSlope" name="ST_Slope_Up">
+        <option value="1">Yes, it improved (sloped up)</option>
+        <option value="0">No or not sure</option>
+      </select>
+
+      <div class="buttons">
+        <button type="submit">Submit</button>
+        <button type="button" onclick="clearForm()">Clear</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('heartForm');
+    const modal = document.getElementById('resultModal');
+    const resultText = document.getElementById('resultText');
+    const resultDescription = document.getElementById('resultDescription');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const jsonData = {};
+
+      formData.forEach((value, key) => {
+        jsonData[key] = isNaN(value) ? value : Number(value);
+      });
+
+      fetch('http://localhost:8000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonData),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.prediction === 1) {
+            resultText.innerHTML = '<div class="risk">Risk Detected</div>';
+            resultDescription.textContent = 'Based on the information provided, you may have an elevated risk of heart disease. Please consult with a healthcare professional.';
+          } else {
+            resultText.innerHTML = '<div class="no-risk">No Risk Detected</div>';
+            resultDescription.textContent = 'Based on the information provided, you appear to have a lower risk of heart disease. Continue maintaining a healthy lifestyle.';
+          }
+          showModal();
+        })
+        .catch(err => {
+          resultText.innerHTML = '<div class="risk">Error</div>';
+          resultDescription.textContent = 'There was an error processing your information. Please try again.';
+          showModal();
+        });
+    });
+
+    function showModal() {
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      modal.style.display = 'none';
+    }
+
+    function clearForm() {
+      form.reset();
+    }
+  </script>
+</body>
+
+</html>
