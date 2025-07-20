@@ -49,7 +49,6 @@ A structured dataset containing clinical and demographic features:
 ### ➤ Exported Artifacts
 
 * `hard_vote_model.pkl` – Trained ensemble model
-* `scaler.pkl` – Fitted StandardScaler instance
 
 ---
 
